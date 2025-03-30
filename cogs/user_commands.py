@@ -39,15 +39,15 @@ class UserCommands(commands.Cog):
         embed.add_field(
             name="How to Play",
             value=(
-            "1. Read the clue carefully.\n"
-            "2. Solve the clue to find the key. "
-            "Keys only contain lowercase letters a-z (no spaces, numbers, or special characters). "
-            "Example key: `sixstars`\n"
-            "3. Send your answer here in this DM channel.\n"
-            "4. If correct, you'll get the next clue! If wrong, you can try again.\n"
-            "Remember: Keys must be found in the correct order.\n\n"
-            "Type `/` to see available commands and track your progress!\n"
-            f"Visit <#{config.EVENTS_CHANNEL_ID}> for more details. Good hunting!"
+                "1. Read the clue carefully.\n"
+                "2. Solve the clue to find the key. "
+                "Keys only contain lowercase letters a-z (no spaces, numbers, or special characters). "
+                "Example key: `sixstars`\n"
+                "3. Send your answer here in this DM channel.\n"
+                "4. If correct, you'll get the next clue! If wrong, you can try again.\n"
+                "Remember: Keys must be found in the correct order.\n\n"
+                "Type `/` to see available commands and track your progress!\n"
+                f"Visit <#{config.EVENTS_CHANNEL_ID}> for more details. Good hunting!"
             ),
             inline=False,
         )

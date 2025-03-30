@@ -162,9 +162,7 @@ class DynoHunt(commands.Bot):
             return await ctx.invoke(help_command, command=ctx.command.qualified_name)
 
         elif isinstance(error, commands.MissingRole):
-            error_embed.description = (
-                "You are not allowed to use this command."
-            )
+            error_embed.description = "You are not allowed to use this command."
 
         elif isinstance(error, commands.NotOwner):
             return
@@ -211,7 +209,11 @@ class CustomCommandTree(discord.app_commands.CommandTree):
         super().__init__(bot)
         self.bot = bot
 
-    async def on_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
+    async def on_error(
+        self,
+        interaction: discord.Interaction,
+        error: discord.app_commands.AppCommandError,
+    ) -> None:
         """Error handler for application commands.
 
         Args:
@@ -225,9 +227,7 @@ class CustomCommandTree(discord.app_commands.CommandTree):
         )
 
         if isinstance(error, discord.app_commands.MissingRole):
-            error_embed.description = (
-                "You are not allowed to use this command."
-            )
+            error_embed.description = "You are not allowed to use this command."
 
         elif isinstance(error, discord.app_commands.MissingPermissions):
             error_embed.description = (
@@ -242,7 +242,9 @@ class CustomCommandTree(discord.app_commands.CommandTree):
                 f"The {interaction.command.name} command is on "
                 f"cooldown, you can use it again {cooldown}."
             )
-            error = f"The {interaction.command.name} application command is on cooldown."
+            error = (
+                f"The {interaction.command.name} application command is on cooldown."
+            )
 
         else:
             error_embed.description = f"{str(error)}"
