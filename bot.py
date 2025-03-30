@@ -252,7 +252,7 @@ class CustomCommandTree(discord.app_commands.CommandTree):
         logger.error(log)
         try:
             await interaction.response.send_message(
-                embed=error_embed, ephemeral=True, delete_after=120
+                embed=error_embed, ephemeral=True, delete_after=60
             )
         except discord.InteractionResponded:
             await interaction.followup.send(embed=error_embed, ephemeral=True)
