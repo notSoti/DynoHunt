@@ -7,7 +7,7 @@ from typing import Optional, Union
 
 import discord
 from asyncache import cached
-from cachetools import LRUCache, TTLCache
+from cachetools import LRUCache
 from discord.app_commands import AppCommand
 from discord.ext import commands
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -85,31 +85,6 @@ class DynoHunt(commands.Bot):
             if command["name"] == name:
                 return command if attribute is None else command.get(attribute)
 
-    @cached(cache=TTLCache(maxsize=1, ttl=6 * 60 * 60))
-    async def fetch_application_emojis(self) -> list[discord.Emoji]:
-        """Override the fetch_application_emojis method to cache the emojis.
-
-        Returns:
-            list[Emoji]: The list of emojis.
-        """
-        logger.info("Fetching application emojis")
-        return await super().fetch_application_emojis()
-
-    async def get_app_emoji(self, name: str) -> str:
-        """Get the emoji for the bot.
-
-        Args:
-            name (str): The name of the emoji.
-
-        Returns:
-            str: The requested emoji or "❓" if not found.
-        """
-        emoji = discord.utils.get(await self.fetch_application_emojis(), name=name)
-        if emoji is None:
-            logger.warning(f"App emoji {name} not found")
-            return "❓"
-        return str(emoji)
-
     async def setup_hook(self) -> None:
         """Hook to setup the bot."""
         self.db = AsyncIOMotorClient(config.MONGO_URI)
@@ -156,63 +131,6 @@ class DynoHunt(commands.Bot):
         await self.change_presence(activity=discord.CustomActivity(name="🐰"))
         logger.info(f"{self.user} is online")
 
-    async def on_interaction(self, interaction: discord.Interaction) -> None:
-        """Interactions handler.
-
-        Args:
-            interaction (discord.Interaction): The interaction object.
-        """
-        if interaction.type is not discord.InteractionType.application_command:
-            return
-
-        logger.debug(
-            (
-                f"{interaction.user} ({interaction.user.id}) used the "
-                f"{interaction.command.name} application command"
-            )
-        )
-
-    async def on_app_command_error(
-        self,
-        interaction: discord.Interaction,
-        error: discord.app_commands.AppCommandError,
-    ) -> None:
-        """Error handler for application commands.
-
-        Args:
-            interaction (discord.Interaction): The interaction object.
-            error (discord.app_commands.AppCommandError): The error object.
-        """
-        error_embed = discord.Embed(
-            color=discord.Color.brand_red(),
-            title="Error!",
-            timestamp=discord.utils.utcnow(),
-        )
-        emoji = await self.get_app_emoji("error")
-
-        if isinstance(error, discord.app_commands.MissingRole):
-            error_embed.description = (
-                f"{emoji} You are not allowed to use this command."
-            )
-
-        elif isinstance(error, discord.app_commands.MissingPermissions):
-            error_embed.description = (
-                f"{emoji} You are missing the required permissions to use this command."
-            )
-
-        else:
-            error_embed.description = f"{emoji} {str(error)}"
-
-        log = f"UserID: {interaction.user.id} - Command: {interaction.command.name}: {error}"
-
-        logger.error(log)
-        try:
-            await interaction.response.send_message(
-                embed=error_embed, ephemeral=True, delete_after=15
-            )
-        except discord.InteractionResponded:
-            await interaction.followup.send(embed=error_embed, ephemeral=True)
-
     async def on_command_error(
         self, ctx: commands.Context, error: commands.CommandError
     ) -> None:
@@ -227,12 +145,11 @@ class DynoHunt(commands.Bot):
             title="Error!",
             timestamp=discord.utils.utcnow(),
         )
-        emoji = await self.get_app_emoji("error")
-        error_embed.description = f"{emoji} {error}"
+        error_embed.description = f"{error}"
 
         if isinstance(error, commands.CommandInvokeError):
             error = error.original
-            error_embed.description = f"{emoji} {str(error)}"
+            error_embed.description = f"{str(error)}"
             ctx.command.reset_cooldown(ctx)
 
         elif isinstance(error, commands.CommandNotFound):
@@ -246,19 +163,19 @@ class DynoHunt(commands.Bot):
 
         elif isinstance(error, commands.MissingRole):
             error_embed.description = (
-                f"{emoji} You are not allowed to use this command."
+                "You are not allowed to use this command."
             )
 
         elif isinstance(error, commands.NotOwner):
             return
 
         elif isinstance(error, commands.BadArgument):
-            error_embed.description = f"{emoji} {error}"
+            error_embed.description = f"{error}"
             ctx.command.reset_cooldown(ctx)
 
         elif isinstance(error, commands.MissingPermissions):
             error_embed.description = (
-                f"{emoji} You are missing the required permissions to use this command."
+                "You are missing the required permissions to use this command."
             )
 
         elif isinstance(error, commands.CommandOnCooldown):
@@ -266,7 +183,7 @@ class DynoHunt(commands.Bot):
             cooldown = now + timedelta(seconds=error.retry_after)
             cooldown = discord.utils.format_dt(cooldown, "R")
             error_embed.description = (
-                f"{emoji} The {ctx.command} command is on "
+                f"The {ctx.command} command is on "
                 f"cooldown, you can use it again {cooldown}."
             )
             error = f"The {ctx.command} application command is on cooldown."
@@ -275,11 +192,11 @@ class DynoHunt(commands.Bot):
             return
 
         elif isinstance(error, errors.Error):
-            error_embed.description = f"{emoji} {error}"
+            error_embed.description = f"{error}"
             ctx.command.reset_cooldown(ctx)
 
         else:
-            error_embed.description = f"{emoji} {error}"
+            error_embed.description = f"{error}"
 
         logger.error(f"UserID: {ctx.author.id} - Command: {ctx.command}: {error}")
 
@@ -287,6 +204,58 @@ class DynoHunt(commands.Bot):
             await ctx.reply(embed=error_embed, delete_after=60)
         except (discord.Forbidden, discord.HTTPException):
             pass
+
+
+class CustomCommandTree(discord.app_commands.CommandTree):
+    def __init__(self, bot: DynoHunt):
+        super().__init__(bot)
+        self.bot = bot
+
+    async def on_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError) -> None:
+        """Error handler for application commands.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+            error (discord.app_commands.AppCommandError): The error object.
+        """
+        error_embed = discord.Embed(
+            color=discord.Color.brand_red(),
+            title="Error!",
+            timestamp=discord.utils.utcnow(),
+        )
+
+        if isinstance(error, discord.app_commands.MissingRole):
+            error_embed.description = (
+                "You are not allowed to use this command."
+            )
+
+        elif isinstance(error, discord.app_commands.MissingPermissions):
+            error_embed.description = (
+                "You are missing the required permissions to use this command."
+            )
+
+        elif isinstance(error, discord.app_commands.CommandOnCooldown):
+            now = discord.utils.utcnow()
+            cooldown = now + timedelta(seconds=error.retry_after)
+            cooldown = discord.utils.format_dt(cooldown, "R")
+            error_embed.description = (
+                f"The {interaction.command.name} command is on "
+                f"cooldown, you can use it again {cooldown}."
+            )
+            error = f"The {interaction.command.name} application command is on cooldown."
+
+        else:
+            error_embed.description = f"{str(error)}"
+
+        log = f"UserID: {interaction.user.id} - Command: {interaction.command.name}: {error}"
+
+        logger.error(log)
+        try:
+            await interaction.response.send_message(
+                embed=error_embed, ephemeral=True, delete_after=120
+            )
+        except discord.InteractionResponded:
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
 
 
 async def get_tree_hash(tree: discord.app_commands.CommandTree) -> bytes:
@@ -320,6 +289,7 @@ async def get_prefix(bot: DynoHunt, message: discord.Message) -> str:
 
 async def main() -> None:
     bot = DynoHunt(
+        tree_cls=CustomCommandTree,
         intents=discord.Intents(
             dm_messages=True,
             guild_messages=True,
