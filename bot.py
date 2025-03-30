@@ -128,7 +128,6 @@ class DynoHunt(commands.Bot):
             else:
                 logger.info("Tree hash has not changed, not syncing.")
 
-        await self.change_presence(activity=discord.CustomActivity(name="🐰"))
         logger.info(f"{self.user} is online")
 
     async def on_command_error(
@@ -307,6 +306,7 @@ async def main() -> None:
         strip_after_prefix=True,
         owner_id=config.APP_OWNER_ID,
         status="online",
+        activity=discord.CustomActivity(name="🔎 DM me to get started!"),
         help_command=None,
     )
     await bot.start(config.APP_TOKEN)
