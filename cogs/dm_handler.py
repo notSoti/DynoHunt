@@ -24,28 +24,29 @@ class HowToPlayView(discord.ui.View):
     ):
         """Displays information on how to play the game."""
         embed = discord.Embed(
-            title=f"Dyno Hunt {strftime('%Y')}!",
+            title=f"Dyno Hunt {strftime('%Y')}! <a:DynoGlitch:866473520326377472>",
             description=(
-                "Welcome to this year's Dyno Hunt! This is a scavenger hunt "
-                "where you must find keys to progress through the clues. "
-                "Each key is a word or phrase that you must find and enter to progress to the next clue. "
-                "You can enter your guesses here in this DM channel."
+                "Welcome to this year's Dyno Hunt!\n\n"
+                "This is an exciting scavenger hunt where you'll solve clues to discover hidden keys "
+                "throughout the Dyno community. Each key is unique and will unlock the next part of your adventure. "
+                "Simply send your guesses here in our DM channel.\n\n"
+                "Ready to begin your quest? Get your first clue with the "
+                f"{await interaction.client.get_app_command('clue', 'mention')} command!"
             ),
             color=discord.Color.blue(),
         )
         embed.add_field(
             name="How to Play",
             value=(
-                "1. Read the clue provided.\n"
-                "2. Use the clue to find the key. "
-                "All keys will only contain lowercase letters A-Z with **no spaces**. "
-                "An example key is `sixstars`\n"
-                "3. Send the key **here** in this DM channel.\n"
-                "4. If you're correct, you'll receive the next clue! "
-                "Otherwise, I'll tell you so. Also keep in mind, you have to find the keys in the correct order!\n"
-                "Additionally, you can use a few slash commands here to keep track of your progress! "
-                "Just type `/` here to see all available commands.\n"
-                f"For more information, check out <#{config.EVENTS_CHANNEL_ID}>; good luck!"
+                "1. Read the clue carefully.\n"
+                "2. Solve the clue to find the key. "
+                "Keys only contain lowercase letters a-z (no spaces, numbers, or special characters). "
+                "Example key: `sixstars`\n"
+                "3. Send your answer here in this DM channel.\n"
+                "4. If correct, you'll get the next clue! If wrong, you can try again.\n"
+                "Remember: Keys must be found in the correct order.\n\n"
+                "Type `/` to see available commands and track your progress!\n"
+                f"Visit <#{config.EVENTS_CHANNEL_ID}> for more details. Good hunting!"
             ),
             inline=False,
         )
@@ -120,7 +121,11 @@ class DMHandler(commands.Cog):
 
         if message.guild is not None or message.author.bot or not message.content:
             return
-        if len(message.content) == 1 or len(message.content) >= 100 or "http" in message.content:
+        if (
+            len(message.content) == 1
+            or len(message.content) >= 100
+            or "http" in message.content
+        ):
             return
 
         cooldown = self.cd_mapping.get_bucket(message)
@@ -151,13 +156,13 @@ class DMHandler(commands.Cog):
             await utils.User.increment_attempts(self.bot, message.author.id)
 
             # If the user has found the final key, send the decoding instructions
-            # and the final code (from this last guess)
             if user.get("key_to_find") == -1:
                 return await message.reply(
                     (
-                        "Congratulations! You've found all of the keys! "
+                        "You've found all of the keys! "
                         "Here's your final clue:\n"
-                        f"> {await utils.User.get_clue(self.bot, message.author.id)}"
+                        f"> {await utils.User.get_clue(self.bot, message.author.id)}\n"
+                        f"-# To see all the codes, use the {await self.bot.get_app_command('progress', 'mention')} command.\n"
                     ),
                     allowed_mentions=discord.AllowedMentions.none(),
                 )
@@ -171,6 +176,7 @@ class DMHandler(commands.Cog):
                         f"***{await utils.User.get_code(self.bot, message.author.id)}***! "
                         "Here's your next clue:\n> "
                         f"{await utils.User.get_clue(self.bot, message.author.id)}\n"
+                        f"-# To see all the codes, use the {await self.bot.get_app_command('progress', 'mention')} command.\n"
                     ),
                     allowed_mentions=discord.AllowedMentions.none(),
                     view=HowToPlayView(),
