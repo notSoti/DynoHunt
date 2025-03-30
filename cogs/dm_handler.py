@@ -120,7 +120,7 @@ class DMHandler(commands.Cog):
 
         if message.guild is not None or message.author.bot or not message.content:
             return
-        if len(message.content) == 1 or len(message.content) >= 100:
+        if len(message.content) == 1 or len(message.content) >= 100 or "http" in message.content:
             return
 
         cooldown = self.cd_mapping.get_bucket(message)
