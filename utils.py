@@ -202,7 +202,7 @@ class User:
     """Class for handling user operations."""
 
     @staticmethod
-    async def get_user(bot: DynoHunt, user_id: int) -> dict:
+    async def get_user(bot: DynoHunt, user_id: int) -> Optional[dict]:
         """Get a user's data.
 
         Args:
@@ -210,7 +210,7 @@ class User:
             user_id (int): The user ID.
 
         Returns:
-            dict: The user data.
+            dict: The user data if found.
         """
         return await DB.get(bot, "users", str(user_id))
 
