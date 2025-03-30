@@ -100,10 +100,13 @@ class DMHandler(commands.Cog):
             timestamps = user.get("key_completion_timestamps", {})
             completion_times = sorted(timestamps.values())
 
-            for i in range(1, len(completion_times)):
-                time_diff = completion_times[i] - completion_times[i - 1]
-                if time_diff < 180:
-                    return True
+            if len(completion_times) >= 3:
+                for i in range(len(completion_times) - 2):
+                    time_span = completion_times[i + 2] - completion_times[i]
+                    # if the time span between 3 consecutive keys is less than 6 minutes
+                    # then it's safe to assume the user is doing something sus
+                    if time_span < 360:
+                        return True
 
         wrong_order_guesses = user.get("wrong_order_correct_guesses", 0)
         if wrong_order_guesses > 6:
