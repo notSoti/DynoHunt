@@ -1,0 +1,35 @@
+# Ruff
+.ruff_cache/
+
+# Config
+config.py
+
+# Virtual Environment
+venv/
+
+# Byte-compiled / optimized / DLL files
+tree.hash
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
