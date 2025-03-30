@@ -1,23 +1,21 @@
 import asyncio
 import hashlib
 from datetime import timedelta
-from os import urandom
+from os import environ, urandom
 from time import time
 from typing import Optional, Union
 
-from motor.motor_asyncio import AsyncIOMotorClient
-import config
-import errors
 import discord
 from asyncache import cached
 from cachetools import LRUCache, TTLCache
 from discord.app_commands import AppCommand
 from discord.ext import commands
+from motor.motor_asyncio import AsyncIOMotorClient
 
+import config
+import errors
 import logger
 from cogs import EXTENSIONS
-# from cogs.dm_handler import HowToPlayView
-# from views import BaseView
 
 logger = logger.get_logger()
 
@@ -25,7 +23,7 @@ logger = logger.get_logger()
 class DynoHunt(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.prefix = config.PREFIX
+        self.prefix = config.PREFIX
         self.launch_time = int(time())
 
     @cached(cache=LRUCache(maxsize=1))
@@ -117,6 +115,12 @@ class DynoHunt(commands.Bot):
         self.db = AsyncIOMotorClient(config.MONGO_URI)
 
         extensions = EXTENSIONS
+
+        extensions.append("jishaku")
+        environ["JISHAKU_NO_DM_TRACEBACK"] = "True"
+        environ["JISHAKU_HIDE"] = "True"
+        environ["JISHAKU_NO_UNDERSCORE"] = "True"
+
         for extension in extensions:
             try:
                 await self.load_extension(extension)
@@ -126,8 +130,8 @@ class DynoHunt(commands.Bot):
                 logger.error(f"Extension not found: {extension}")
             except commands.NoEntryPointError:
                 logger.error(f"Extension has no setup function: {extension}")
-            # except commands.ExtensionFailed as e:
-            #     logger.error(f"Failed to load extension {extension}: {e}")
+            except commands.ExtensionFailed as e:
+                logger.error(f"Failed to load extension {extension}: {e}")
             finally:
                 logger.debug(f"Loaded extension {extension}")
 
@@ -160,9 +164,6 @@ class DynoHunt(commands.Bot):
         """
         if interaction.type is not discord.InteractionType.application_command:
             return
-
-        # await update_stat(bot, "commands_used")
-        # await update_most_used_commands(bot, interaction.command.name)
 
         logger.debug(
             (
@@ -199,11 +200,6 @@ class DynoHunt(commands.Bot):
                 f"{emoji} You are missing the required permissions to use this command."
             )
 
-        # elif isinstance(error, errors.NotTheAuthor):
-        #     error_embed.description = (
-        #         f"{emoji} Only the author of the interaction can use this."
-        #     )
-
         else:
             error_embed.description = f"{emoji} {str(error)}"
 
@@ -231,8 +227,8 @@ class DynoHunt(commands.Bot):
             title="Error!",
             timestamp=discord.utils.utcnow(),
         )
-        error_embed.description = f"{await self.get_app_emoji('error')} {error}"
         emoji = await self.get_app_emoji("error")
+        error_embed.description = f"{emoji} {error}"
 
         if isinstance(error, commands.CommandInvokeError):
             error = error.original
@@ -244,6 +240,8 @@ class DynoHunt(commands.Bot):
 
         elif isinstance(error, commands.MissingRequiredArgument):
             help_command = self.get_command("help")
+            if help_command is None:
+                return
             return await ctx.invoke(help_command, command=ctx.command.qualified_name)
 
         elif isinstance(error, commands.MissingRole):
@@ -273,14 +271,12 @@ class DynoHunt(commands.Bot):
             )
             error = f"The {ctx.command} application command is on cooldown."
 
-        elif error.original and isinstance(error.original, errors.Error):
-            error_embed.description = f"{emoji} {error.original}"
-            ctx.command.reset_cooldown(ctx)
+        elif isinstance(error, commands.NoPrivateMessage):
+            return
 
-        # elif error.original and isinstance(error.original, errors.NotTheAuthor):
-        #     error_embed.description = (
-        #         f"{emoji} Only the author of the interaction can use this."
-        #     )
+        elif isinstance(error, errors.Error):
+            error_embed.description = f"{emoji} {error}"
+            ctx.command.reset_cooldown(ctx)
 
         else:
             error_embed.description = f"{emoji} {error}"
@@ -288,7 +284,7 @@ class DynoHunt(commands.Bot):
         logger.error(f"UserID: {ctx.author.id} - Command: {ctx.command}: {error}")
 
         try:
-            await ctx.reply(embed=error_embed, delete_after=15)
+            await ctx.reply(embed=error_embed, delete_after=60)
         except (discord.Forbidden, discord.HTTPException):
             pass
 
@@ -312,8 +308,12 @@ async def get_prefix(bot: DynoHunt, message: discord.Message) -> str:
     fake_prefix = urandom(8).hex()
     if message.guild is None or isinstance(message.author, discord.User):
         return fake_prefix
-    if message.author.id == bot.owner_id:
-        prefix = bot.prefix
+    if message.author.id == bot.owner_id or any(
+        role.id
+        in [config.COUNCIL_ROLE, config.COMM_WIZARD_ROLE, config.SENIOR_STAFF_ROLE]
+        for role in message.author.roles
+    ):
+        prefix = bot.prefix or fake_prefix
         return commands.when_mentioned_or(prefix, prefix.capitalize())(bot, message)
     return fake_prefix
 
@@ -322,19 +322,20 @@ async def main() -> None:
     bot = DynoHunt(
         intents=discord.Intents(
             dm_messages=True,
+            guild_messages=True,
+            message_content=True,
             guilds=True,
-            members=True,  # Required for the on_member_update event
+            members=True,  # for on_member_update
         ),
-        command_prefix=[],
+        command_prefix=get_prefix,
         allowed_mentions=discord.AllowedMentions(
             roles=False, users=False, everyone=False
         ),
-        # case_insensitive=True,
-        # strip_after_prefix=True,
+        case_insensitive=True,
+        strip_after_prefix=True,
         owner_id=config.APP_OWNER_ID,
-        # description="Put your amazing detective skills to work as you explore all things related to Dyno to find clues and coded messages for a chance to win some prizes!",
         status="online",
-        # help_command=None,
+        help_command=None,
     )
     await bot.start(config.APP_TOKEN)
 
