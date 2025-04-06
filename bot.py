@@ -281,7 +281,7 @@ async def get_prefix(bot: DynoHunt, message: discord.Message) -> str:
         return fake_prefix
     if message.author.id == bot.owner_id or any(
         role.id
-        in [config.COUNCIL_ROLE, config.COMM_WIZARD_ROLE, config.SENIOR_STAFF_ROLE]
+        in [config.COUNCIL_ROLE, config.COMM_WIZARD_ROLE]
         for role in message.author.roles
     ):
         prefix = bot.prefix or fake_prefix
