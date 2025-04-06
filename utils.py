@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 import config
 import errors
-
 from bot import DynoHunt
 
 
@@ -22,8 +21,9 @@ class DB:
         Returns:
             dict: The inserted document.
         """
+        env = "prod" if not config.args.dev else "dev"
         try:
-            await bot.db["prod"][collection].insert_one(document)
+            await bot.db[env][collection].insert_one(document)
             return document
         except Exception as e:
             raise errors.Error(f"Failed to insert document: {e}") from e
@@ -43,8 +43,9 @@ class DB:
         Returns:
             dict: The document.
         """
+        env = "prod" if not config.args.dev else "dev"
         if field:
-            document = await bot.db["prod"][collection].find_one(
+            document = await bot.db[env][collection].find_one(
                 {"_id": str(collection_id)}
             )
             keys = field.split(".")
@@ -57,7 +58,7 @@ class DB:
                 if value is None:
                     break
             return value
-        return await bot.db["prod"][collection].find_one({"_id": str(collection_id)})
+        return await bot.db[env][collection].find_one({"_id": str(collection_id)})
 
     @staticmethod
     async def get_many(
@@ -73,10 +74,11 @@ class DB:
         Returns:
             list: The documents.
         """
+        env = "prod" if not config.args.dev else "dev"
         if not ids:
-            return await bot.db["prod"][collection].find().to_list(None)
+            return await bot.db[env][collection].find().to_list(None)
         return (
-            await bot.db["prod"][collection].find({"_id": {"$in": ids}}).to_list(None)
+            await bot.db[env][collection].find({"_id": {"$in": ids}}).to_list(None)
         )
 
     @staticmethod
@@ -100,7 +102,8 @@ class DB:
         Returns:
             None
         """
-        await bot.db["prod"][collection].update_one(
+        env = "prod" if not config.args.dev else "dev"
+        await bot.db[env][collection].update_one(
             {"_id": str(collection_id)}, update_query, upsert=upsert
         )
         return await DB.get(bot, collection, collection_id)
@@ -181,7 +184,8 @@ class DB:
         Returns:
             None
         """
-        await bot.db["prod"][collection].delete_one({"_id": str(collection_id)})
+        env = "prod" if not config.args.dev else "dev"
+        await bot.db[env][collection].delete_one({"_id": str(collection_id)})
 
     @staticmethod
     async def delete_many(bot: DynoHunt, collection: str, ids: list[str]) -> None:
@@ -195,7 +199,8 @@ class DB:
         Returns:
             None
         """
-        await bot.db["prod"][collection].delete_many({"_id": {"$in": ids}})
+        env = "prod" if not config.args.dev else "dev"
+        await bot.db[env][collection].delete_many({"_id": {"$in": ids}})
 
 
 class User:

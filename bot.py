@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import hashlib
 from datetime import timedelta
@@ -313,6 +314,15 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Dyno Hunt Bot")
+    parser.add_argument(
+        "--dev",
+        help="Run the bot in development mode",
+        action="store_true",
+    )
+    args = parser.parse_args()
+
+    config.args = args
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
