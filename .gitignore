@@ -1,9 +1,6 @@
 # Ruff
 .ruff_cache/
 
-# Config
-config.py
-
 # Virtual Environment
 venv/
 
