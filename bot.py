@@ -307,7 +307,7 @@ async def main() -> None:
         strip_after_prefix=True,
         owner_id=config.APP_OWNER_ID,
         status="online",
-        activity=discord.CustomActivity(name="🔎 DM me to get started!"),
+        activity=discord.CustomActivity(name="🔎 DM me to get started with the hunt!"),
         help_command=None,
     )
     await bot.start(config.APP_TOKEN)
