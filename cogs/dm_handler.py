@@ -176,7 +176,7 @@ class DMHandler(commands.Cog):
                 await message.reply(
                     (
                         "Correct! "
-                        #"This key's code is "
+                        # "This key's code is "
                         # f"***{await utils.User.get_code(self.bot, message.author.id)}***! "
                         "Here's your next clue:\n> "
                         f"{await utils.User.get_clue(self.bot, message.author.id)}\n"

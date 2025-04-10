@@ -77,9 +77,7 @@ class DB:
         env = "prod" if not config.args.dev else "dev"
         if not ids:
             return await bot.db[env][collection].find().to_list(None)
-        return (
-            await bot.db[env][collection].find({"_id": {"$in": ids}}).to_list(None)
-        )
+        return await bot.db[env][collection].find({"_id": {"$in": ids}}).to_list(None)
 
     @staticmethod
     async def update(
