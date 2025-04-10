@@ -165,7 +165,7 @@ class DMHandler(commands.Cog):
                         "You've found all of the keys! "
                         "Here's your final clue:\n"
                         f"> {await utils.User.get_clue(self.bot, message.author.id)}\n"
-                        f"-# To see all the codes, use the {await self.bot.get_app_command('progress', 'mention')} command.\n"
+                        f"-# To see your progress, use the {await self.bot.get_app_command('progress', 'mention')} command.\n"
                     ),
                     allowed_mentions=discord.AllowedMentions.none(),
                 )
@@ -175,11 +175,12 @@ class DMHandler(commands.Cog):
                 user = await utils.User.advance_user(self.bot, message.author.id)
                 await message.reply(
                     (
-                        "Correct! This key's code is "
-                        f"***{await utils.User.get_code(self.bot, message.author.id)}***! "
+                        "Correct! "
+                        #"This key's code is "
+                        # f"***{await utils.User.get_code(self.bot, message.author.id)}***! "
                         "Here's your next clue:\n> "
                         f"{await utils.User.get_clue(self.bot, message.author.id)}\n"
-                        f"-# To see all the codes, use the {await self.bot.get_app_command('progress', 'mention')} command.\n"
+                        f"-# To see your progress, use the {await self.bot.get_app_command('progress', 'mention')} command.\n"
                     ),
                     allowed_mentions=discord.AllowedMentions.none(),
                     view=HowToPlayView(),

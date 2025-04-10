@@ -16,7 +16,8 @@ COMM_WIZARD_ROLE: int
 HUNT_CHAMPION_ROLE: int
 
 # This is an example of what this dictionary should look like, with values from an old Dyno Hunt
-# The final hint/decoding hint must have the key of -1
+# The final/decoding hint must have the key of "-1"
+# The "code" key is optional
 KEYS = {
     "1": {
         "clue": "Sometimes a lot of people find a message really funny. When this happens, this is where it usually ends up.",

@@ -1,4 +1,5 @@
 from time import strftime
+from typing import Literal
 
 import discord
 from discord import app_commands
@@ -15,6 +16,26 @@ class UserCommands(commands.Cog):
 
     def __init__(self, bot: DynoHunt):
         self.bot = bot
+
+    def _format_found_items(
+        self,
+        user_data: dict,
+        item_type: Literal["value", "code"],
+    ) -> str:
+        """Format found keys or codes for display."""
+        items_found = []
+        for key, key_data in config.KEYS.items():
+            if key == "-1" or str(key) not in user_data.get(
+                "key_completion_timestamps", {}
+            ):
+                continue
+
+            item_value = key_data.get(item_type.lower())
+            items_found.append(
+                f"{'Key' if item_type == 'value' else 'From Key'} {key}: **{item_value}**"
+            )
+
+        return "\n".join(items_found)
 
     @app_commands.command(
         name="help",
@@ -65,9 +86,15 @@ class UserCommands(commands.Cog):
         if not user_data:
             raise errors.Error("You haven't started the hunt yet!")
 
+        if not user_data.get("key_completion_timestamps"):
+            raise errors.Error(
+                f"You haven't found any keys yet! Use "
+                f"{await self.bot.get_app_command('clue', 'mention')} to get your first clue."
+            )
+
         embed = discord.Embed(
             title="Your Progress",
-            description="Here are the codes you have found so far:",
+            description="Here's your progress in the hunt so far:",
             color=discord.Color.blue(),
             timestamp=discord.utils.utcnow(),
         )
@@ -76,35 +103,36 @@ class UserCommands(commands.Cog):
             icon_url=interaction.user.avatar,
         )
         embed.set_footer(
-            text=f"You've found {len(user_data.get('key_completion_timestamps', []))} out of {len(config.KEYS) - 1} keys",
+            text=(
+                f"You've found {len(user_data.get('key_completion_timestamps'))} "
+                f"out of {len(config.KEYS) - 1} keys"
+            ),
         )
 
-        codes_found = []
-        for key, key_data in config.KEYS.items():
-            if key != "-1" and str(key) in user_data.get(
-                "key_completion_timestamps", {}
-            ):
-                codes_found.append(f"From Key {key}: **{key_data['code']}**")
+        keys_resp = self._format_found_items(user_data, "value")
+        embed.add_field(
+            name="Keys Found",
+            value=keys_resp,
+            inline=False,
+        )
 
-        if not codes_found:
-            embed.description = "You haven't found any codes yet! When you find a new key, its code will be added here."
+        # Check if the current hunt is using codes
+        if config.KEYS.get("1", {}).get("code"):
+            codes_resp = self._format_found_items(user_data, "code")
+            embed.add_field(
+                name="Codes Found",
+                value=codes_resp,
+                inline=False,
+            )
+
         if user_data.get("completed", False):
-            embed.description = (
-                f"{'\n'.join(codes_found)}\n\n",
-                "You've completed the hunt!",
-            )
             embed.set_footer(
-                text=f"You've found {len(config.KEYS) - 1} out of {len(config.KEYS) - 1} keys, and decoded the final message!",
+                text=f"You've found all {len(config.KEYS) - 1} keys, and decoded the final message!",
             )
-        if len(codes_found) == len(config.KEYS) - 1:
-            embed.description = (
-                f"{'\n'.join(codes_found)}\n\n"
-                "You've found all the codes! Time to decode them! "
-                "Here's your final clue to do so:\n"
-                f"> {await utils.User.get_clue(self.bot, interaction.user.id)}\n"
+        elif len(user_data.get("key_completion_timestamps")) == len(config.KEYS) - 1:
+            embed.set_footer(
+                text=f"You've found all {len(config.KEYS) - 1} keys! Time to decode them!",
             )
-        else:
-            embed.description = "\n".join(codes_found)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(
