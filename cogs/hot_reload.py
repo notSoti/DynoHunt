@@ -3,8 +3,8 @@ from pathlib import Path as pathlib
 
 from discord.ext import commands, tasks
 
-from logger import logger
 from bot import DynoHunt
+from logger import logger
 
 logger = logger.getChild(__name__)
 
@@ -17,7 +17,6 @@ class HotReload(commands.Cog):
         self.reload_extensions.start()
 
     def cog_unload(self):
-        """Stops the tasks when the cog is unloaded."""
         self.reload_extensions.cancel()
 
     @tasks.loop(seconds=10)
@@ -59,6 +58,6 @@ class HotReload(commands.Cog):
             self.last_modified_time[extension] = last_modified_time
 
 
-async def setup(bot):
+async def setup(bot: DynoHunt):
     """Initializes the cog."""
     await bot.add_cog(HotReload(bot))
