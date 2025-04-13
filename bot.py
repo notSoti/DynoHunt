@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import hashlib
 from datetime import timedelta
-from os import environ, urandom
+from os import environ
 from time import time
 from typing import Optional, Union
 
@@ -24,7 +24,7 @@ logger = logger.get_logger()
 class DynoHunt(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.prefix = config.PREFIX
+        self.prefix: str | list[str] = config.args.prefix
         self.launch_time = int(time())
 
     @cached(cache=LRUCache(maxsize=1))
@@ -267,7 +267,7 @@ async def get_tree_hash(tree: discord.app_commands.CommandTree) -> bytes:
     return hashlib.sha256(str(payload).encode()).digest()
 
 
-async def get_prefix(bot: DynoHunt, message: discord.Message) -> str:
+async def get_prefix(bot: DynoHunt, message: discord.Message) -> list[Optional[str]]:
     """Get the prefix for the bot.
 
     Args:
@@ -276,16 +276,15 @@ async def get_prefix(bot: DynoHunt, message: discord.Message) -> str:
     Returns:
         str: The prefix for the bot.
     """
-    fake_prefix = urandom(8).hex()
     if message.guild is None or isinstance(message.author, discord.User):
-        return fake_prefix
+        return []
     if message.author.id == bot.owner_id or any(
         role.id in [config.COUNCIL_ROLE, config.COMM_WIZARD_ROLE]
         for role in message.author.roles
     ):
-        prefix = bot.prefix or fake_prefix
-        return commands.when_mentioned_or(prefix, prefix.capitalize())(bot, message)
-    return fake_prefix
+        prefix = bot.prefix
+        return commands.when_mentioned_or(*prefix)(bot, message)
+    return []
 
 
 async def main() -> None:
@@ -314,6 +313,12 @@ async def main() -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Dyno Hunt Bot")
+    parser.add_argument(
+        "--prefix",
+        help="Set the bot prefix. If not set, there will be no prefix.",
+        type=str,
+        default=[],
+    )
     parser.add_argument(
         "--dev",
         help="Run the bot in development mode",

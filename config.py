@@ -1,6 +1,5 @@
 APP_TOKEN: str
 APP_OWNER_ID: int
-PREFIX: str
 
 MONGO_URI: str
 
