@@ -11,9 +11,6 @@ class RoleHandler(commands.Cog):
 
     def __init__(self, bot: DynoHunt):
         self.bot = bot
-        self.cd_mapping = commands.CooldownMapping.from_cooldown(
-            2, 5, commands.BucketType.user
-        )
 
     @commands.Cog.listener()
     async def on_member_update(
