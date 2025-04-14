@@ -1,14 +1,4 @@
 import logging
-import logging.handlers
-from time import time
-
-
-class UnixTimestampFormatter(logging.Formatter):
-    """Formatter to format the time in Unix timestamp for the file handler."""
-
-    def formatTime(self, record, datefmt=None) -> str:
-        """Format the time in Unix timestamp."""
-        return str(int(time()))
 
 
 class ColorFormatter(logging.Formatter):
