@@ -1,4 +1,5 @@
 import logging
+import sys
 
 
 class ColorFormatter(logging.Formatter):
@@ -28,7 +29,8 @@ def get_logger():
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    stream_logger = logging.StreamHandler()
+    stream = sys.stdout if sys.stdout.isatty() else sys.stderr
+    stream_logger = logging.StreamHandler(stream)
 
     stream_logger.setLevel(logging.INFO)
 
