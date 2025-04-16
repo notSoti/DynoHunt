@@ -6,7 +6,6 @@ from discord import app_commands
 from discord.ext import commands
 
 import config
-import errors
 import utils
 from bot import DynoHunt
 
@@ -84,12 +83,21 @@ class UserCommands(commands.Cog):
         """Check your progress in the hunt."""
         user_data = await utils.User.get_user(self.bot, interaction.user.id)
         if not user_data:
-            raise errors.Error("You haven't started the hunt yet!")
+            return await interaction.response.send_message(
+                (
+                    f"You haven't started the hunt yet! Use "
+                    f"{await self.bot.get_app_command('clue', 'mention')} to get your first clue."
+                ),
+                ephemeral=True,
+            )
 
         if not user_data.get("key_completion_timestamps"):
-            raise errors.Error(
-                f"You haven't found any keys yet! Use "
-                f"{await self.bot.get_app_command('clue', 'mention')} to get your first clue."
+            return await interaction.response.send_message(
+                (
+                    f"You haven't found any keys yet! Use "
+                    f"{await self.bot.get_app_command('clue', 'mention')} to get your first clue."
+                ),
+                ephemeral=True,
             )
 
         embed = discord.Embed(
