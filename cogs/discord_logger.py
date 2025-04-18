@@ -48,6 +48,10 @@ class UserStats(discord.ui.View):
             icon_url=user.avatar,
         )
         user_data = await utils.User.get_user(interaction.client, self.user_id)
+        if not user_data:
+            return await interaction.response.send_message(
+                "User not found in the database.", ephemeral=True
+            )
         if user:
             next_key = user_data.get("key_to_find")
             embed.add_field(
