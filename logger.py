@@ -29,17 +29,23 @@ def get_logger():
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    stream = sys.stdout if sys.stdout.isatty() else sys.stderr
-    stream_logger = logging.StreamHandler(stream)
+    # INFO and DEBUG
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    stdout_handler.setLevel(logging.DEBUG)
+    stdout_handler.addFilter(lambda record: record.levelno <= logging.INFO)
 
-    stream_logger.setLevel(logging.INFO)
+    # WARNING, ERROR, and CRITICAL
+    stderr_handler = logging.StreamHandler(sys.stderr)
+    stderr_handler.setLevel(logging.WARNING)
 
-    stream_logger.setFormatter(
-        ColorFormatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", "%Y-%m-%d %H:%M:%S"
-        )
+    formatter = ColorFormatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s", "%Y-%m-%d %H:%M:%S"
     )
-    logger.addHandler(stream_logger)
+    stdout_handler.setFormatter(formatter)
+    stderr_handler.setFormatter(formatter)
+
+    logger.addHandler(stdout_handler)
+    logger.addHandler(stderr_handler)
     return logger
 
 
