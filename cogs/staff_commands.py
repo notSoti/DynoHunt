@@ -6,8 +6,8 @@ import aiohttp
 import discord
 from asyncache import cached
 from cachetools import TTLCache
+from discord import app_commands
 from discord.ext import commands
-from discord.ext.commands.cooldowns import BucketType
 
 import errors
 import utils
@@ -87,24 +87,23 @@ class StaffCommands(commands.Cog):
                 data = await response.read()
                 return BytesIO(data)
 
-    @commands.command(
+    @app_commands.command(
         name="stats",
-        description="Get the global or user stats for the hunt.",
+        description="Get the global or user stats for the current hunt.",
     )
-    @commands.cooldown(1, 7, BucketType.user)
-    @commands.bot_has_guild_permissions(
-        embed_links=True,
-        send_messages=True,
+    @app_commands.checks.cooldown(1, 7, key=lambda i: (i.user.id))
+    @app_commands.guild_only()
+    @app_commands.default_permissions(manage_guild=True)
+    @app_commands.describe(
+        user="User to get stats for.",
     )
     async def _stats(
         self,
-        ctx: commands.Context[DynoHunt],
-        user: Optional[discord.User] = commands.param(
-            description="User to get stats for.",
-            default=None,
-        ),
+        interaction: discord.Interaction,
+        user: Optional[discord.User] = None,
     ) -> None:
         """Get the global or user stats for the hunt."""
+        await interaction.response.defer(thinking=True)
         embed = discord.Embed(
             color=discord.Color.blue(),
             url="https://discord.com",  # needed for multi image embed
@@ -119,6 +118,10 @@ class StaffCommands(commands.Cog):
             embed.add_field(
                 name="Total Users",
                 value=f"{len(all_users)} users",
+            )
+            embed.add_field(
+                name="Total Key Guesses",
+                value=f"{sum(user.get('total_attempts', 0) for user in all_users)} guesses",
             )
             embed.add_field(
                 name="Total Finished Users",
@@ -180,13 +183,12 @@ class StaffCommands(commands.Cog):
             temp_embed.set_image(url="attachment://time_stats.png")
             time_stats_image_bytes.seek(0)
 
-            return await ctx.reply(
+            return await interaction.followup.send(
                 embeds=[embed, temp_embed],
                 files=[
                     discord.File(stats_image_bytes, filename="stats.png"),
                     discord.File(time_stats_image_bytes, filename="time_stats.png"),
                 ],
-                allowed_mentions=discord.AllowedMentions.none(),
             )
 
         user_stats = await utils.User.get_user(self.bot, user.id)
@@ -302,10 +304,9 @@ class StaffCommands(commands.Cog):
         embed.set_image(url="attachment://user_time_graph.png")
         graph_image_bytes.seek(0)
 
-        await ctx.reply(
+        await interaction.followup.send(
             embed=embed,
             file=discord.File(graph_image_bytes, filename="user_time_graph.png"),
-            allowed_mentions=discord.AllowedMentions.none(),
         )
 
 
