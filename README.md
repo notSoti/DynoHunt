@@ -66,27 +66,20 @@ The special `-1` key entry contains only a clue, which is shown to users after t
 
 ## Running the Bot
 
-The bot supports different modes of operation through command-line arguments:
-
-### Development Mode
+Run the bot using the following command:
 ```bash
-python bot.py --dev --prefix !
+python bot.py [--dev] [--prefix PREFIX]
 ```
+
+Available flags:
 - `--dev`: Runs the bot in development mode
   - Uses a separate development database environment
-
 - `--prefix`: Sets a command prefix (e.g., `!`) for text commands
   - Only staff members (with Council or Community Wizard roles) and the application's owner can use prefix commands
-  - If not set, the bot will only respond to mentions
-  - Multiple prefixes can be specified: `--prefix !`
+  - If not set, the bot will only respond to mentions and slash commands
+  - Multiple prefixes can be specified: `--prefix ! ?`
 
-### Production Mode
-```bash
-python bot.py
-```
-- Runs without development features
-- Uses the production database
-- Only responds to slash commands by default
+Without any flags, the bot runs in production mode using the production database and only responds to mentions and slash commands.
 
 ## Code Structure
 
