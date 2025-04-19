@@ -3,8 +3,8 @@ from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 
 import errors
-from cogs import EXTENSIONS
 from bot import DynoHunt
+from cogs import EXTENSIONS
 
 
 class Help(commands.Cog):
