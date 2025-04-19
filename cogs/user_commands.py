@@ -52,7 +52,7 @@ class UserCommands(commands.Cog):
                 "throughout the Dyno community. Each key is unique and will unlock the next part of your adventure. "
                 "Simply send your guesses here in our DM channel.\n\n"
                 "Ready to begin your quest? Get your first clue with the "
-                f"{await self.bot.get_command('clue', 'mention')} command!"
+                f"{await self.bot.get_app_command('clue', 'mention')} command!"
             ),
             color=discord.Color.blue(),
         )
