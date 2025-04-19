@@ -3,13 +3,14 @@ import asyncio
 import hashlib
 from datetime import timedelta
 from os import environ
+from pathlib import Path
 from time import time
-from typing import Optional, Union
+from typing import Optional, Union, override
 
 import discord
 from asyncache import cached
 from cachetools import LRUCache
-from discord.app_commands import AppCommand
+from discord import app_commands
 from discord.ext import commands
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -21,22 +22,70 @@ from cogs import EXTENSIONS
 logger = logger.get_logger()
 
 
-class DynoHunt(commands.Bot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.prefix: str | list[str] = config.args.prefix
-        self.launch_time = int(time())
+class CustomCommandTree(app_commands.CommandTree["DynoHunt"]):
+    @override
+    async def sync(self, *args, **kwargs):
+        await super().sync(*args, **kwargs)
+        await self.fetch_app_commands(force=True)
+
+    async def on_error(
+        self,
+        interaction: discord.Interaction,
+        error: app_commands.AppCommandError,
+    ) -> None:
+        """Error handler for application commands.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+            error (app_commands.AppCommandError): The error object.
+        """
+        error_embed = discord.Embed(
+            color=discord.Color.brand_red(),
+            title="Error!",
+            timestamp=discord.utils.utcnow(),
+        )
+
+        if isinstance(error, app_commands.MissingRole):
+            error_embed.description = "You are not allowed to use this command."
+
+        elif isinstance(error, app_commands.MissingPermissions):
+            error_embed.description = (
+                "You are missing the required permissions to use this command."
+            )
+
+        elif isinstance(error, app_commands.CommandOnCooldown):
+            now = discord.utils.utcnow()
+            cooldown = now + timedelta(seconds=error.retry_after)
+            cooldown = discord.utils.format_dt(cooldown, "R")
+            error_embed.description = (
+                f"The {interaction.command.name} command is on "
+                f"cooldown, you can use it again {cooldown}."
+            )
+            error = (
+                f"The {interaction.command.name} application command is on cooldown."
+            )
+
+        else:
+            error_embed.description = f"{str(error)}"
+
+        log = f"UserID: {interaction.user.id} - Command: {interaction.command.name}: {error}"
+
+        logger.error(log)
+        try:
+            await interaction.response.send_message(
+                embed=error_embed, ephemeral=True, delete_after=60
+            )
+        except discord.InteractionResponded:
+            await interaction.followup.send(embed=error_embed, ephemeral=True)
 
     @cached(cache=LRUCache(maxsize=1))
-    async def fetch_app_commands(self) -> list[dict[str, Union[str, list[str]]]]:
-        """Fetch and cache all application commands.
-
-        Returns:
-            list[dict[str, Union[str, list[str]]]]: The list of application commands.
-        """
+    async def _cached_fetch_app_commands(
+        self,
+    ) -> list[dict[str, Union[str, list[str]]]]:
+        """Internal method to fetch and cache application commands."""
         logger.info("Fetching application commands")
         application_commands = []
-        fetched_commands: list[AppCommand] = await self.tree.fetch_commands()
+        fetched_commands: list[app_commands.AppCommand] = await self.fetch_commands()
 
         for command in fetched_commands:
             children = []
@@ -71,6 +120,36 @@ class DynoHunt(commands.Bot):
 
         return application_commands
 
+    async def fetch_app_commands(
+        self, force: bool = False
+    ) -> list[dict[str, Union[str, list[str]]]]:
+        """Fetch application commands, optionally bypassing cache.
+
+        Args:
+            force (bool, optional): Whether to bypass the cache. Defaults to False.
+
+        Returns:
+            list[dict[str, Union[str, list[str]]]]: The list of application commands.
+        """
+        if force:
+            return await self._cached_fetch_app_commands.__wrapped__(self)
+        return await self._cached_fetch_app_commands()
+
+    async def get_tree_hash(self) -> bytes:
+        """Generate a hash of the command tree."""
+        coms = sorted(
+            self._get_all_commands(guild=None), key=lambda n: n.qualified_name
+        )
+        payload = [c.to_dict(self) for c in coms]
+        return hashlib.sha256(str(payload).encode()).digest()
+
+
+class DynoHunt(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.prefix: str | list[str] = config.args.prefix
+        self.launch_time = int(time())
+
     async def get_app_command(
         self, name: str, attribute: Optional[str] = None
     ) -> Optional[Union[dict[str, str], str]]:
@@ -78,11 +157,12 @@ class DynoHunt(commands.Bot):
 
         Args:
             name (str): The name of the application command.
+            attribute (Optional[str], optional): The attribute of the command to get. Defaults to None.
 
         Returns:
             Optional[Union[dict[str, str], str]]: The command dict or the attribute of the command.
         """
-        for command in await self.fetch_app_commands():
+        for command in await self.tree.fetch_app_commands():
             if command["name"] == name:
                 return command if attribute is None else command.get(attribute)
 
@@ -111,25 +191,25 @@ class DynoHunt(commands.Bot):
             finally:
                 logger.debug(f"Loaded extension {extension}")
 
-    async def on_ready(self) -> None:
-        """Event to run when the bot is ready."""
-        path = "./tree.hash"
-        tree_hash = await get_tree_hash(self.tree)
-        # Create the file if it does not exist
-        with open(path, "a+b") as fp:
-            pass
-        with open(path, "r+b") as fp:
-            data = fp.read()
+        path = Path("./tree.hash")
+        tree_hash = await self.tree.get_tree_hash()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            path.write_bytes(tree_hash)
+            await self.tree.sync()
+            logger.info("Tree hash file created, syncing...")
+        else:
+            data = path.read_bytes()
             if data != tree_hash:
                 await self.tree.sync()
                 logger.info("Tree hash has changed, syncing...")
-                fp.seek(0)
-                fp.write(tree_hash)
-                fp.truncate()
+                path.write_bytes(tree_hash)
             else:
                 logger.info("Tree hash has not changed, not syncing.")
 
-        logger.info(f"{self.user} is online")
+    async def on_ready(self) -> None:
+        """Event to run when the bot is ready."""
+        logger.info(f"{self.user} is online with the prefix: {self.prefix}")
 
     async def on_command_error(
         self, ctx: commands.Context, error: commands.CommandError
@@ -202,69 +282,6 @@ class DynoHunt(commands.Bot):
             await ctx.reply(embed=error_embed, delete_after=60)
         except (discord.Forbidden, discord.HTTPException):
             pass
-
-
-class CustomCommandTree(discord.app_commands.CommandTree):
-    def __init__(self, bot: DynoHunt):
-        super().__init__(bot)
-        self.bot = bot
-
-    async def on_error(
-        self,
-        interaction: discord.Interaction,
-        error: discord.app_commands.AppCommandError,
-    ) -> None:
-        """Error handler for application commands.
-
-        Args:
-            interaction (discord.Interaction): The interaction object.
-            error (discord.app_commands.AppCommandError): The error object.
-        """
-        error_embed = discord.Embed(
-            color=discord.Color.brand_red(),
-            title="Error!",
-            timestamp=discord.utils.utcnow(),
-        )
-
-        if isinstance(error, discord.app_commands.MissingRole):
-            error_embed.description = "You are not allowed to use this command."
-
-        elif isinstance(error, discord.app_commands.MissingPermissions):
-            error_embed.description = (
-                "You are missing the required permissions to use this command."
-            )
-
-        elif isinstance(error, discord.app_commands.CommandOnCooldown):
-            now = discord.utils.utcnow()
-            cooldown = now + timedelta(seconds=error.retry_after)
-            cooldown = discord.utils.format_dt(cooldown, "R")
-            error_embed.description = (
-                f"The {interaction.command.name} command is on "
-                f"cooldown, you can use it again {cooldown}."
-            )
-            error = (
-                f"The {interaction.command.name} application command is on cooldown."
-            )
-
-        else:
-            error_embed.description = f"{str(error)}"
-
-        log = f"UserID: {interaction.user.id} - Command: {interaction.command.name}: {error}"
-
-        logger.error(log)
-        try:
-            await interaction.response.send_message(
-                embed=error_embed, ephemeral=True, delete_after=60
-            )
-        except discord.InteractionResponded:
-            await interaction.followup.send(embed=error_embed, ephemeral=True)
-
-
-async def get_tree_hash(tree: discord.app_commands.CommandTree) -> bytes:
-    """Generate a hash of the command tree."""
-    coms = sorted(tree._get_all_commands(guild=None), key=lambda n: n.qualified_name)
-    payload = [c.to_dict(tree) for c in coms]
-    return hashlib.sha256(str(payload).encode()).digest()
 
 
 async def get_prefix(bot: DynoHunt, message: discord.Message) -> list[Optional[str]]:
