@@ -10,6 +10,7 @@ A Discord bot designed for managing the annual Dyno Hunt event in the [Dyno Disc
 - Staff commands for monitoring hunt progress
 - User statistics and analytics with graphs
 - Hot-reload capability for faster deployment
+- Automatic command tree synchronization to minimize Discord API calls
 - MongoDB database
 
 ## Installation
@@ -113,6 +114,18 @@ DynoHunt/
 - **dm_handler.py**: Main hunt logic and key validation
 - **discord_logger.py**: Optional activity logging and monitoring
 - **staff_commands.py**: Administrative commands and statistics
+
+### Automatic Tree Synchronization
+
+The bot implements an efficient command tree synchronization system to minimize Discord API calls. Here's how it works:
+
+1. On startup, the bot generates a SHA-256 hash of all registered commands and their properties
+2. This hash is stored in a `tree.hash` file in the project root
+3. On subsequent startups, a new hash is generated and compared with the stored one
+4. Commands are only synced with Discord's API if the hash has changed
+5. This ensures that API calls for command registration are only made when necessary
+
+This system is particularly useful during development when you're frequently restarting the bot, as it prevents unnecessary API calls and helps avoid Discord's rate limits.
 
 ## Development
 
