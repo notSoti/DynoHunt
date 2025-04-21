@@ -133,11 +133,13 @@ class StaffCommands(commands.Cog):
             )
             stats = await self.get_key_stats()
             sorted_stats = {k: stats[k] for k in sorted(stats.keys(), key=lambda x: int(x) if x != "-1" else float("inf"))}
-            display_stats = {("Decoding" if k == "-1" else k): v for k, v in sorted_stats.items()}
+            completed_users = len([user for user in all_users if user.get('completed')])
+            sorted_stats["completed"] = completed_users
+            display_stats = {("Decoding" if k == "-1" else "Completed" if k == "completed" else k): v for k, v in sorted_stats.items()}
             embed.add_field(
                 name="Users per Key",
                 value="\n".join(
-                    f"Key {k}: {v} users" if k != "Decoding" else f"{k}: {v} users"
+                    f"{k}: {v} users" if k in ["Decoding", "Completed"] else f"Key {k}: {v} users"
                     for k, v in display_stats.items()
                 ),
             )
@@ -147,7 +149,7 @@ class StaffCommands(commands.Cog):
                     "chart": {
                         "type": "bar",
                         "data": {
-                            "labels": [("Decoding" if k == "-1" else f"Key {k}") for k in sorted_stats.keys()],
+                            "labels": [("Decoding" if k == "-1" else "Completed" if k == "completed" else f"Key {k}") for k in sorted_stats.keys()],
                             "datasets": [
                                 {
                                     "label": "Users on each key",
