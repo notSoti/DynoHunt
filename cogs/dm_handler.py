@@ -103,14 +103,14 @@ class DMHandler(commands.Cog):
             if len(completion_times) >= 3:
                 for i in range(len(completion_times) - 2):
                     time_span = completion_times[i + 2] - completion_times[i]
-                    # if the time span between 3 consecutive keys is less than 6 minutes
+                    # if the time span between 3 consecutive keys is less than 5 minutes
                     # then it's safe to assume the user is doing something sus
-                    if time_span < 360:
+                    if time_span < 300:
                         return True
 
-        wrong_order_guesses = user.get("wrong_order_correct_guesses", 0)
-        if wrong_order_guesses > 6:
-            return True
+        # wrong_order_guesses = user.get("wrong_order_correct_guesses", 0)
+        # if wrong_order_guesses > 6:
+        #     return True
 
         return False
 
