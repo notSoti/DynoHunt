@@ -165,23 +165,51 @@ class StaffCommands(commands.Cog):
             embed.set_image(url="attachment://stats.png")
             stats_image_bytes.seek(0)
 
-            stats = await self.get_key_completion_times()
+            completion_times = await self.get_key_completion_times()
+            sorted_keys = sorted(completion_times.keys(), key=lambda x: int(x) if x != "-1" else float("inf"))
+            
+            # Format labels with arrows and calculate times
+            times = []
+            formatted_labels = []
+            for i in range(len(sorted_keys) - 1):
+                times.append(completion_times[sorted_keys[i]])
+                current_key = "Finished" if sorted_keys[i] == "-1" else f"Key {sorted_keys[i]}"
+                next_key = "Finished" if sorted_keys[i + 1] == "-1" else f"Key {sorted_keys[i + 1]}"
+                formatted_labels.append(f"{current_key} → {next_key}")
+
             time_stats_image_bytes = await self.build_graph(
                 stats={
                     "chart": {
                         "type": "bar",
                         "data": {
-                            "labels": list(stats.keys()),
+                            "labels": formatted_labels,
                             "datasets": [
                                 {
-                                    "label": "Average Completion Time (minutes)",
-                                    "data": list(stats.values()),
+                                    "label": "Average Time Spent (minutes)",
+                                    "data": times,
+                                    "backgroundColor": "rgba(54, 162, 235, 0.5)",
+                                    "borderColor": "rgb(54, 162, 235)",
+                                    "borderWidth": 1,
                                 },
                             ],
                         },
+                        "options": {
+                            "scales": {
+                                "y": {
+                                    "beginAtZero": False,
+                                    "title": {"display": True, "text": "Minutes"},
+                                }
+                            },
+                            "plugins": {
+                                "title": {
+                                    "display": True,
+                                    "text": "Global Average Time Spent Per Key",
+                                }
+                            },
+                        },
                     },
-                    "width": 800,
-                    "height": 400,
+                    "width": 1000,
+                    "height": 600,
                 }
             )
             temp_embed = embed.copy()
