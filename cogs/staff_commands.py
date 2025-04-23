@@ -120,6 +120,10 @@ class StaffCommands(commands.Cog):
                 value=f"{len(all_users)} users",
             )
             embed.add_field(
+                name="Users that made progress",
+                value=f"{len([user for user in all_users if user.get('key_to_find') != 1])} users",
+            )
+            embed.add_field(
                 name="Total Key Guesses",
                 value=f"{sum(user.get('total_attempts', 0) for user in all_users)} guesses",
             )
