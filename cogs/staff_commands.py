@@ -139,6 +139,8 @@ class StaffCommands(commands.Cog):
                 )
             }
             completed_users = len([user for user in all_users if user.get("completed")])
+            if "-1" in sorted_stats:
+                sorted_stats["-1"] -= completed_users
             sorted_stats["completed"] = completed_users
             display_stats = {
                 ("Decoding" if k == "-1" else "Completed" if k == "completed" else k): v
