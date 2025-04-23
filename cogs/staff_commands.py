@@ -132,14 +132,24 @@ class StaffCommands(commands.Cog):
                 value=f"{len([user for user in all_users if user.get('flagged')])} users",
             )
             stats = await self.get_key_stats()
-            sorted_stats = {k: stats[k] for k in sorted(stats.keys(), key=lambda x: int(x) if x != "-1" else float("inf"))}
-            completed_users = len([user for user in all_users if user.get('completed')])
+            sorted_stats = {
+                k: stats[k]
+                for k in sorted(
+                    stats.keys(), key=lambda x: int(x) if x != "-1" else float("inf")
+                )
+            }
+            completed_users = len([user for user in all_users if user.get("completed")])
             sorted_stats["completed"] = completed_users
-            display_stats = {("Decoding" if k == "-1" else "Completed" if k == "completed" else k): v for k, v in sorted_stats.items()}
+            display_stats = {
+                ("Decoding" if k == "-1" else "Completed" if k == "completed" else k): v
+                for k, v in sorted_stats.items()
+            }
             embed.add_field(
                 name="Users per Key",
                 value="\n".join(
-                    f"{k}: {v} users" if k in ["Decoding", "Completed"] else f"Key {k}: {v} users"
+                    f"{k}: {v} users"
+                    if k in ["Decoding", "Completed"]
+                    else f"Key {k}: {v} users"
                     for k, v in display_stats.items()
                 ),
             )
@@ -149,7 +159,16 @@ class StaffCommands(commands.Cog):
                     "chart": {
                         "type": "bar",
                         "data": {
-                            "labels": [("Decoding" if k == "-1" else "Completed" if k == "completed" else f"Key {k}") for k in sorted_stats.keys()],
+                            "labels": [
+                                (
+                                    "Decoding"
+                                    if k == "-1"
+                                    else "Completed"
+                                    if k == "completed"
+                                    else f"Key {k}"
+                                )
+                                for k in sorted_stats.keys()
+                            ],
                             "datasets": [
                                 {
                                     "label": "Users on each key",
@@ -166,15 +185,24 @@ class StaffCommands(commands.Cog):
             stats_image_bytes.seek(0)
 
             completion_times = await self.get_key_completion_times()
-            sorted_keys = sorted(completion_times.keys(), key=lambda x: int(x) if x != "-1" else float("inf"))
-            
+            sorted_keys = sorted(
+                completion_times.keys(),
+                key=lambda x: int(x) if x != "-1" else float("inf"),
+            )
+
             # Format labels with arrows and calculate times
             times = []
             formatted_labels = []
             for i in range(len(sorted_keys) - 1):
                 times.append(completion_times[sorted_keys[i]])
-                current_key = "Finished" if sorted_keys[i] == "-1" else f"Key {sorted_keys[i]}"
-                next_key = "Finished" if sorted_keys[i + 1] == "-1" else f"Key {sorted_keys[i + 1]}"
+                current_key = (
+                    "Finished" if sorted_keys[i] == "-1" else f"Key {sorted_keys[i]}"
+                )
+                next_key = (
+                    "Finished"
+                    if sorted_keys[i + 1] == "-1"
+                    else f"Key {sorted_keys[i + 1]}"
+                )
                 formatted_labels.append(f"{current_key} → {next_key}")
 
             time_stats_image_bytes = await self.build_graph(
