@@ -29,7 +29,9 @@ class RoleHandler(commands.Cog):
         if not await utils.User.get_user(self.bot, after.id):
             return
 
-        if config.HUNT_CHAMPION_ROLE in [role.id for role in after.roles]:
+        if config.HUNT_CHAMPION_ROLE in [
+            role.id for role in after.roles
+        ] and config.HUNT_CHAMPION_ROLE not in [role.id for role in before.roles]:
             await utils.User.advance_user(self.bot, after.id)
             self.bot.dispatch("user_finish", after)
 
