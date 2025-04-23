@@ -115,13 +115,21 @@ class StaffCommands(commands.Cog):
             )
 
             all_users = await self.get_all_users()
+            if not all_users:
+                raise errors.Error("No users found in the database.")
             embed.add_field(
                 name="Total Users",
                 value=f"{len(all_users)} users",
             )
+            users_with_progress = len(
+                [user for user in all_users if user.get("key_to_find") != 1]
+            )
             embed.add_field(
                 name="Users that made progress",
-                value=f"{len([user for user in all_users if user.get('key_to_find') != 1])} users",
+                value=(
+                    f"{users_with_progress} users "
+                    f"({users_with_progress / len(all_users) * 100:.0f}%)"
+                ),
             )
             embed.add_field(
                 name="Total Key Guesses",
