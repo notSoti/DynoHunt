@@ -232,6 +232,9 @@ class DynoHunt(commands.Bot):
             error_embed.description = f"{str(error)}"
             ctx.command.reset_cooldown(ctx)
 
+        elif isinstance(error, commands.DisabledCommand):
+            return
+
         elif isinstance(error, commands.CommandNotFound):
             return
 

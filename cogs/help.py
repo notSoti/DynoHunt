@@ -14,6 +14,7 @@ class Help(commands.Cog):
     @commands.command(
         name="help",
         description="Get help on a specific command or list all commands.",
+        enabled=False,
     )
     @commands.cooldown(1, 5, BucketType.user)
     @commands.bot_has_permissions(send_messages=True, embed_links=True)
