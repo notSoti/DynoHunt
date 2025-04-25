@@ -48,50 +48,49 @@ class UserStats(discord.ui.View):
             icon_url=user.avatar,
         )
         user_data = await utils.User.get_user(interaction.client, self.user_id)
-        if not user_data:
+        if user_data is None:
             return await interaction.response.send_message(
                 "User not found in the database.", ephemeral=True
             )
-        if user:
-            next_key = user_data.get("key_to_find")
+        next_key = user_data.get("key_to_find")
+        embed.add_field(
+            name="Keys Found",
+            value=f"{next_key - 1 if next_key != -1 else len(config.KEYS) - 1}/{len(config.KEYS) - 1}",
+            inline=False,
+        )
+        embed.add_field(
+            name="Started At",
+            value=f"<t:{user_data.get('created_at')}:F> (<t:{user_data.get('created_at')}:R>)",
+            inline=False,
+        )
+        if user_data.get("key_completion_timestamps"):
             embed.add_field(
-                name="Keys Found",
-                value=f"{next_key - 1 if next_key != -1 else len(config.KEYS) - 1}/{len(config.KEYS) - 1}",
+                name="Key Completion Times",
+                value="\n".join(
+                    [
+                        f"Key {key}: <t:{time}:F> (<t:{time}:R>)"
+                        if key != "-1"
+                        else f"Finished: <t:{time}:F> (<t:{time}:R>)"
+                        for key, time in user_data.get(
+                            "key_completion_timestamps", {}
+                        ).items()
+                    ]
+                ),
                 inline=False,
             )
+        if user_data.get("flagged"):
             embed.add_field(
-                name="Started At",
-                value=f"<t:{user_data.get('created_at')}:F> (<t:{user_data.get('created_at')}:R>)",
+                name="⚠️ Potential Cheating",
+                value=(
+                    "This user has been flagged for potential cheating due to getting keys too quickly "
+                    "or getting multiple keys in the wrong order. "
+                    "Please further review their progress and verify if they are cheating."
+                ),
                 inline=False,
             )
-            if user_data.get("key_completion_timestamps"):
-                embed.add_field(
-                    name="Key Completion Times",
-                    value="\n".join(
-                        [
-                            f"Key {key}: <t:{time}:F> (<t:{time}:R>)"
-                            if key != "-1"
-                            else f"Finished: <t:{time}:F> (<t:{time}:R>)"
-                            for key, time in user_data.get(
-                                "key_completion_timestamps", {}
-                            ).items()
-                        ]
-                    ),
-                    inline=False,
-                )
-            if user_data.get("flagged"):
-                embed.add_field(
-                    name="⚠️ Potential Cheating",
-                    value=(
-                        "This user has been flagged for potential cheating due to getting keys too quickly "
-                        "or getting multiple keys in the wrong order. "
-                        "Please further review their progress and verify if they are cheating."
-                    ),
-                    inline=False,
-                )
-            embed.set_footer(
-                text=f"Total attempts: {user_data.get('total_attempts', 0)}"
-            )
+        embed.set_footer(
+            text=f"Total attempts: {user_data.get('total_attempts', 0)}"
+        )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
