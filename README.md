@@ -81,25 +81,6 @@ Available flags:
 
 Without any flags, the bot runs in production mode using the production database and only responds to mentions and slash commands.
 
-## Code Structure
-
-```
-DynoHunt/
-├── bot.py              # Main bot initialization and setup
-├── config.py           # Configuration and constants
-├── errors.py          # Custom error definitions
-├── logger.py          # Logging configuration
-├── utils.py           # Database and utility functions
-└── cogs/              # Bot functionality modules
-    ├── discord_logger.py   # Logging user interactions
-    ├── dm_handler.py       # DM-based hunt interactions
-    ├── help.py            # Help command functionality
-    ├── hot_reload.py      # Development hot-reload
-    ├── role_handler.py    # Role-based functionality
-    ├── staff_commands.py  # Admin commands
-    └── user_commands.py   # User-facing commands
-```
-
 ## Key Components
 
 - **bot.py**: Core bot functionality and command tree setup
@@ -108,7 +89,7 @@ DynoHunt/
 - **discord_logger.py**: Optional activity logging and monitoring
 - **staff_commands.py**: Administrative commands and statistics
 
-### Automatic Tree Synchronization
+### Automatic Tree Syncing
 
 The bot implements an efficient command tree synchronization system to minimize Discord API calls. Here's how it works:
 
@@ -116,9 +97,6 @@ The bot implements an efficient command tree synchronization system to minimize 
 2. This hash is stored in a `tree.hash` file in the project root
 3. On subsequent startups, a new hash is generated and compared with the stored one
 4. Commands are only synced with Discord's API if the hash has changed
-5. This ensures that API calls for command registration are only made when necessary
-
-This system is particularly useful during development when you're frequently restarting the bot, as it prevents unnecessary API calls and helps avoid Discord's rate limits.
 
 ## Development
 
@@ -136,18 +114,6 @@ To check for linting issues:
 ruff check .
 ```
 
-Ruff is configured to enforce consistent code style across the project. Make sure to run these commands before submitting a pull request.
-
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## Acknowledgments
-
-- Built with [discord.py](https://github.com/Rapptz/discord.py)
-- Uses [Motor](https://github.com/mongodb/motor) for MongoDB integration
-- Graphs powered by [QuickChart](https://quickchart.io/)
+PRs are more than welcome!
