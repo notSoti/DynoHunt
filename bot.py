@@ -180,6 +180,7 @@ class DynoHunt(commands.Bot):
         for extension in extensions:
             try:
                 await self.load_extension(extension)
+                logger.debug(f"Loaded extension {extension}")
             except commands.ExtensionAlreadyLoaded:
                 logger.warning(f"Extension already loaded: {extension}")
             except commands.ExtensionNotFound:
@@ -188,8 +189,6 @@ class DynoHunt(commands.Bot):
                 logger.error(f"Extension has no setup function: {extension}")
             except commands.ExtensionFailed as e:
                 logger.error(f"Failed to load extension {extension}: {e}")
-            finally:
-                logger.debug(f"Loaded extension {extension}")
 
         path = Path("./tree.hash")
         tree_hash = await self.tree.get_tree_hash()
