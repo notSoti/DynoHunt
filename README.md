@@ -77,7 +77,6 @@ Available flags:
 - `--prefix`: Sets a command prefix (e.g., `!`) for text commands
   - Only staff members (with Council or Community Wizard roles) and the application's owner can use prefix commands
   - If not set, the bot will only respond to mentions and slash commands
-  - Multiple prefixes can be specified: `--prefix ! ?`
 
 Without any flags, the bot runs in production mode using the production database and only responds to mentions and slash commands.
 
