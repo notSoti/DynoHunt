@@ -1,7 +1,12 @@
-APP_TOKEN: str
-APP_OWNER_ID: int
+import os
+from dotenv import load_dotenv
 
-MONGO_URI: str
+load_dotenv()
+
+APP_TOKEN: str = os.environ.get('APP_TOKEN')
+APP_OWNER_ID: int = int(os.environ.get('APP_OWNER_ID'))
+
+MONGO_URI: str = os.environ.get('MONGO_URI')
 
 START_TIME_TIMESTAMP: int
 END_TIME_TIMESTAMP: int

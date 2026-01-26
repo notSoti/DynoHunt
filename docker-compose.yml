@@ -3,5 +3,7 @@ services:
     build: .
     restart: unless-stopped
     mem_limit: 200m
+    env_file:
+      - .env
     volumes:
       - ./config.py:/app/config.py
