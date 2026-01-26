@@ -1,0 +1,7 @@
+services:
+  mochi-bot:
+    build: .
+    restart: unless-stopped
+    mem_limit: 200m
+    volumes:
+      - ./config.py:/app/config.py
