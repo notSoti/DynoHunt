@@ -1,5 +1,5 @@
 services:
-  mochi-bot:
+  dyno-hunt-bot:
     build: .
     restart: unless-stopped
     mem_limit: 200m
