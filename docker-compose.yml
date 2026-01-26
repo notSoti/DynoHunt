@@ -2,7 +2,7 @@ services:
   dyno-hunt-bot:
     build: .
     restart: unless-stopped
-    mem_limit: 200m
+    mem_limit: 400m
     env_file:
       - .env
     volumes:
